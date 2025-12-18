@@ -1,10 +1,12 @@
-name: CI/CD Pipeline - Heroku
+name: CI/CD Pipeline - Heroku Air Paradis
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
+  # ÉTAPE 1 : TESTS UNITAIRES (MLOps : Qualité et reproductibilité)
   test:
     runs-on: ubuntu-latest
     steps:
@@ -13,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # Recommandé pour tes librairies ML
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
@@ -23,11 +25,13 @@ jobs:
 
       - name: Run Unit Tests
         run: |
+          # PYTHONPATH permet à pytest de trouver le module 'app'
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          pytest tests/test_api.py
+          pytest test/test_api.py
 
+  # ÉTAPE 2 : DÉPLOIEMENT (MLOps : Livraison continue)
   deploy:
-    needs: test # Ne déploie QUE si les tests passent
+    needs: test # Le déploiement ne se lance que si les tests passent
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,3 +42,5 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "tweet-api-d55526412fb1"
           heroku_email: "nathan.gracia.863@gmail.com"
+          # Utilise l'app existante sans essayer de la recréer
+          justdeploy: true
