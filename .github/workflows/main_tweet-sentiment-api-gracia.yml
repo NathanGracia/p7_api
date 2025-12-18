@@ -27,7 +27,7 @@ jobs:
         run: |
           # PYTHONPATH permet à pytest de trouver le module 'app'
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          pytest test/test_api.py
+          pytest tests/test_api.py
 
   # ÉTAPE 2 : DÉPLOIEMENT (MLOps : Livraison continue)
   deploy:
