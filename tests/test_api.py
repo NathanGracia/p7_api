@@ -4,7 +4,7 @@ from app.main import app
 client = TestClient(app)
 
 def test_health():
-    """Vérifie que l'API répond sur /health"""
+    """Vérifie que l'API répond une 200 sur /health"""
     response = client.get("/health")
     assert response.status_code == 200
     body = response.json()
