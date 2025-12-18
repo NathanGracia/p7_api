@@ -5,3 +5,5 @@ pydantic==2.9.2
 scikit-learn==1.4.2
 numpy==1.26.4
 joblib==1.4.2
+# Pour le Deep Learning (attention à la taille du slug Heroku)
+# tensorflow-cpu
