@@ -7,7 +7,7 @@ app = FastAPI(title="Tweet Sentiment API", version="1.0.0")
 
 # FIX : On pointe vers les nouveaux fichiers Word2Vec
 model_service = ModelService(
-    model_path="models/model_lstm_w2v.h5",
+    model_path="models/model_lstm_w2v.keras",
     tokenizer_path="models/tokenizer.pickle"
 )
 
