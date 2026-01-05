@@ -2,30 +2,34 @@ from fastapi import FastAPI, HTTPException
 from app.schemas import PredictRequest, PredictResponse, HealthResponse
 from app.inference import ModelService
 
-#  instancie l'application FastAPI
+# Instancie l'application FastAPI
 app = FastAPI(title="Tweet Sentiment API", version="1.0.0")
 
-#  crée un service d'inférence (chargement du modèle une seule fois)
-model_service = ModelService(model_path="models/model_test.pkl")
+# FIX : On pointe vers les nouveaux fichiers Word2Vec
+model_service = ModelService(
+    model_path="models/model_lstm_w2v.h5",
+    tokenizer_path="models/tokenizer.pickle"
+)
+
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    #  fournit un endpoint de santé simple pour les probes Azure
     return HealthResponse(status="ok")
+
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(payload: PredictRequest):
-    #  valide l'entrée et gère les erreurs d'inférence
     try:
+        # Ton ModelService renvoie maintenant (pred, proba) via le LSTM
         pred_label, pred_proba = model_service.predict(payload.text)
-        #  renvoie une sortie typée et stable
+
         return PredictResponse(
-            is_positive=bool(pred_label),
-            score=float(pred_proba)
+            is_positive=bool(pred_label),  # 1 -> True, 0 -> False
+            score=float(pred_proba)  # La probabilité sigmoid
         )
     except ValueError as ve:
-        #  renvoie une 400 si l'entrée est invalide (ex: texte vide)
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        #  évite d'exposer des détails sensibles en production
+        # En phase de test, tu peux décommenter la ligne suivante pour debugger
+        # print(f"Erreur : {e}")
         raise HTTPException(status_code=500, detail="Inference failed")

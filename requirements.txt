@@ -2,8 +2,8 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.6
 gunicorn==21.2.0
 pydantic==2.9.2
-scikit-learn==1.4.2
 numpy==1.26.4
-joblib==1.4.2
-# Pour le Deep Learning (attention à la taille du slug Heroku)
-# tensorflow-cpu
+# tensorflow par tensorflow-cpu pour économiser ~500 Mo
+tensorflow-cpu==2.15.0
+# Indispensable pour tokenizer.pickle
+pickle5; python_version < '3.11'

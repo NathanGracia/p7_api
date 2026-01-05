@@ -1,64 +1,49 @@
 import os
 import pickle
-from typing import Tuple
-
 import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-#  recommande fortement d'utiliser joblib pour scikit-learn :
-from joblib import load
 
 class ModelService:
-    #  gère le chargement et l'inférence du modèle
-    def __init__(self, model_path: str = None):
-        #  lit le chemin du modèle depuis une variable d'environnement si fournie
-        self.model_path = os.getenv("MODEL_PATH", model_path or "models/model.pkl")
-        #  charge le modèle au démarrage pour éviter les latences à chaud
+    def __init__(self, model_path: str = None, tokenizer_path: str = None):
+        # Chemins par défaut pointant vers tes nouveaux fichiers
+        self.model_path = os.getenv("MODEL_PATH", model_path or "models/model_lstm_w2v.h5")
+        self.tokenizer_path = os.getenv("TOKENIZER_PATH", tokenizer_path or "models/tokenizer.pickle")
+        self.max_len = 64  # Identique à ton entraînement
+
+        # Chargement unique au démarrage pour la rapidité
         self.model = self._load_model(self.model_path)
+        self.tokenizer = self._load_tokenizer(self.tokenizer_path)
 
     def _load_model(self, path: str):
-        #  vérifie l'existence du fichier modèle
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Model file not found at: {path}")
+            raise FileNotFoundError(f"Modèle H5 introuvable à : {path}")
+        # Charge le modèle Keras/TensorFlow
+        return load_model(path)
 
-        #  charge le pipeline sklearn (vectorizer + classifier) picklé
+    def _load_tokenizer(self, path: str):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Tokenizer Pickle introuvable à : {path}")
         with open(path, "rb") as f:
-            #model = pickle.load(f)
-            model = load(path)  # Si joblib est utilisé
-        #  valide que le modèle dispose bien des méthodes attendues
-        required = all(hasattr(model, m) for m in ["predict", "predict_proba"])
-        if not required:
-            raise TypeError("Loaded model does not implement predict/predict_proba")
-        return model
+            return pickle.load(f)
 
-    def predict(self, text: str) -> Tuple[int, float]:
-        #  vérifie l'entrée utilisateur
+    def predict(self, text: str):
         if text is None or not str(text).strip():
-            raise ValueError("Input text must be a non-empty string")
+            raise ValueError("Le texte ne peut pas être vide")
 
-        #  applique la prédiction (on suppose un pipeline compatible)
-        # predict -> classe {0,1}, predict_proba -> [[p0, p1]]
-        pred = self.model.predict([text])[0]
-        proba = self.model.predict_proba([text])[0]
+        # 1. Prétraitement : Texte -> Séquence -> Padding
+        # On utilise le tokenizer chargé au démarrage
+        sequence = self.tokenizer.texts_to_sequences([text])
+        padded = pad_sequences(sequence, maxlen=self.max_len, padding='post')
 
-        #  déduit la proba associée à la classe positive (1)
-        # Hypothèse: la classe positive est indexée par 1
-        if hasattr(self.model, "classes_"):
-            #  localise l'indice de la classe "1"
-            classes = list(self.model.classes_)
-            if 1 in classes:
-                pos_index = classes.index(1)
-            else:
-                #  gère le cas où la classe positive est True ou "positive"
-                if True in classes:
-                    pos_index = classes.index(True)
-                elif "positive" in classes:
-                    pos_index = classes.index("positive")
-                else:
-                    #  fallback sur la proba max si l'étiquette est inconnue
-                    pos_index = int(np.argmax(proba))
-        else:
-            pos_index = int(np.argmax(proba))
+        # 2. Inférence : Calcul du score (0 à 1)
+        # verbose=0 pour la performance en API
+        proba = self.model.predict(padded, verbose=0)[0][0]
 
-        pos_proba = float(proba[pos_index])
+        # 3. Décision (Seuil à 0.5)
+        # 1 = Positif, 0 = Négatif
+        pred = 1 if proba >= 0.5 else 0
 
-        return int(pred), pos_proba
+        # On renvoie l'étiquette et la probabilité associée
+        return int(pred), float(proba)
