@@ -32,7 +32,10 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Full History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
@@ -42,4 +45,5 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           heroku git:remote -a tweet-api
-          git push https://heroku:$HEROKU_API_KEY@git.heroku.com/tweet-api.git main
+          # On utilise -f (force) pour s'assurer que Heroku accepte la mise à jour
+          git push https://heroku:$HEROKU_API_KEY@git.heroku.com/tweet-api.git main -f
