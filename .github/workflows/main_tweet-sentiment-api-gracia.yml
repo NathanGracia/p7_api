@@ -40,3 +40,4 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "tweet-api"
           heroku_email: "nathan.gracia.863@gmail.com"
+          dontautocreate: true
