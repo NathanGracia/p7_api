@@ -38,5 +38,5 @@ jobs:
         uses: akhileshns/heroku-deploy@v3.12.14
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "tweet-api-d55526412fb1" 
+          heroku_app_name: "tweet-api"
           heroku_email: "nathan.gracia.863@gmail.com"
