@@ -29,16 +29,17 @@ jobs:
           pytest tests/test_api.py
 
   deploy:
-    needs: test # Les tests DOIVENT passer pour que le déploiement commence
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
       - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.14
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "tweet-api"
-          heroku_email: "nathan.gracia.863@gmail.com"
-          branch: "main"
-          dontautocreate: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku git:remote -a tweet-api
+          git push https://heroku:$HEROKU_API_KEY@git.heroku.com/tweet-api.git main
