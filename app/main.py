@@ -41,3 +41,19 @@ def predict(payload: PredictRequest):
         # Très utile pour le debug en local si ça plante
         print(f"Erreur d'inférence : {e}")
         raise HTTPException(status_code=500, detail="Inference failed")
+
+
+@app.post("/feedback")
+async def post_feedback(data: dict):
+    # Si le notebook envoie is_correct = False
+    if data.get("is_correct") is False:
+        # On envoie le message NEGATIVE_FEEDBACK à Azure
+        logger.warning("NEGATIVE_FEEDBACK", extra={
+            "custom_dimensions": {
+                "tweet": data.get("text"),
+                "prediction": str(data.get("prediction"))
+            }
+        })
+        return {"status": "Alerte logguée sur Azure"}
+
+    return {"status": "Feedback positif reçu"}
