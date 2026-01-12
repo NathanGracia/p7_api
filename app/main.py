@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from app.schemas import PredictRequest, PredictResponse, HealthResponse
 from app.inference import ModelService
+import logging
+import os
+from azure.monitor.opentelemetry import configure_azure_monitor
 
 # Instancie l'application FastAPI
 app = FastAPI(title="Tweet Sentiment API (Scikit-Learn)", version="1.1.0")
@@ -10,6 +13,12 @@ model_service = ModelService(
     model_path="models/logistic_model.pkl",
     vectorizer_path="models/tfidf_vectorizer.pkl"
 )
+# 1. Activation d'Azure Monitor (il lira la clé dans Heroku tout seul)
+connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+if connection_string:
+    configure_azure_monitor(connection_string=connection_string)
+
+logger = logging.getLogger("FeedbackLogger")
 
 @app.get("/health", response_model=HealthResponse)
 def health():
