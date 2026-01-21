@@ -1,14 +1,17 @@
 from pydantic import BaseModel, Field
 
-#  définit le schéma d'entrée
+
 class PredictRequest(BaseModel):
+    """Schéma d'entrée pour la prédiction de sentiment."""
     text: str = Field(..., description="Tweet text to analyze")
 
-#  définit le schéma de sortie
-class PredictResponse(BaseModel):
-    is_positive: bool
-    score: float  #  renvoie une proba (0..1)
 
-#  définit un schéma pour le healthcheck
+class PredictResponse(BaseModel):
+    """Schéma de sortie avec le résultat et le score de confiance."""
+    is_positive: bool
+    score: float  # probabilité entre 0 et 1
+
+
 class HealthResponse(BaseModel):
+    """Schéma pour le healthcheck."""
     status: str

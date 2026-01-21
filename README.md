@@ -1,144 +1,128 @@
-# 🧠 Tweet Sentiment API – FastAPI + Azure App Service
+# Tweet Sentiment API
 
-Une API de classification de sentiments développée avec **FastAPI** et déployée automatiquement sur **Azure Web App** grâce à **GitHub Actions**.  
-Ce projet illustre un workflow de CI/CD moderne pour le Machine Learning et la Data Science.
+API REST pour l'analyse de sentiment de tweets, construite avec FastAPI et déployée sur Azure App Service.
 
----
+## Présentation
 
-## 🚀 Fonctionnalités
+Cette API permet de classifier le sentiment d'un texte (positif ou négatif) grâce à un modèle de régression logistique entraîné sur des données de tweets. Le projet inclut un pipeline CI/CD complet avec GitHub Actions pour le déploiement automatique.
 
-- API REST **FastAPI** pour analyser le sentiment d’un texte (positif, neutre, négatif).  
-- **Déploiement continu** automatique sur Azure à chaque `push` sur la branche `main`.  
-- **Installation automatique des dépendances** pendant le déploiement grâce à Oryx.  
-- Hébergement sur **Azure App Service Linux** avec un serveur de production **Gunicorn + UvicornWorker**.
+## Stack technique
 
----
-
-## 🧩 Architecture du projet
-
-```
-.
-├── app/
-│   ├── main.py              # Point d’entrée FastAPI (contient l’objet app)
-│   ├── model/               # Fichiers du modèle de Machine Learning
-│   └── utils/               # Prétraitement, fonctions auxiliaires
-├── requirements.txt         # Dépendances Python
-├── .github/
-│   └── workflows/
-│       └── azure-webapp.yml # Workflow CI/CD GitHub Actions
-└── README.md
-```
-
----
-
-## 🐍 Technologies utilisées
-
-| Composant | Version / Description |
-|------------|------------------------|
-| Python | 3.12 |
+| Composant | Version |
+|-----------|---------|
+| Python | 3.11+ |
 | FastAPI | 0.115.0 |
 | Uvicorn | 0.30.6 |
 | Gunicorn | 21.2.0 |
-| Scikit-learn | 1.4.2 |
-| Azure Web App | Linux, Oryx build |
-| GitHub Actions | CI/CD pipeline |
+| Scikit-learn | 1.3.2 |
+| Azure Monitor | 1.6.4 |
 
----
+## Structure du projet
 
-## ⚙️ Installation locale
-
-1. **Cloner le dépôt**
-   ```bash
-   git clone https://github.com/<votre-utilisateur>/<votre-repo>.git
-   cd <votre-repo>
-   ```
-
-2. **Créer un environnement virtuel**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # sous Linux/Mac
-   .venv\Scripts\activate     # sous Windows
-   ```
-
-3. **Installer les dépendances**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Lancer l’API localement**
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-5. Ouvrez [http://localhost:8000/docs](http://localhost:8000/docs) pour accéder à la documentation interactive Swagger UI.
-
----
-
-## ☁️ Déploiement sur Azure
-
-Le déploiement est **automatique** dès qu’un commit est poussé sur `main`.
-
-### 📦 Étapes principales du workflow
-1. GitHub Actions récupère le code (`actions/checkout@v4`).
-2. L’action `azure/login@v2` s’authentifie à Azure avec vos **secrets GitHub** :
-   - `AZUREAPPSERVICE_CLIENTID_...`
-   - `AZUREAPPSERVICE_TENANTID_...`
-   - `AZUREAPPSERVICE_SUBSCRIPTIONID_...`
-3. Azure exécute un **build Oryx** :
-   - Crée un environnement virtuel `antenv`
-   - Installe `requirements.txt`
-4. Azure démarre l’API via :
-   ```
-   gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 app.main:app
-   ```
-
----
-
-## 🔑 Variables d’environnement (Azure)
-
-Les paramètres peuvent être définis dans **Azure Portal → App Service → Configuration → Paramètres d’application**.
-
-Exemple :
-| Nom | Valeur | Description |
-|------|---------|-------------|
-| `MODEL_PATH` | `/home/site/wwwroot/models/model.pkl` | Chemin du modèle ML |
-| `API_KEY` | `xxxxxxxxx` | Clé privée pour sécuriser l’API |
-
-Elles sont accessibles dans le code via :
-```python
-import os
-model_path = os.getenv("MODEL_PATH")
+```
+p7_api/
+├── app/
+│   ├── main.py          # Point d'entrée FastAPI
+│   ├── schemas.py       # Modèles Pydantic
+│   └── inference.py     # Service de prédiction ML
+├── models/
+│   ├── logistic_model.pkl
+│   └── tfidf_vectorizer.pkl
+├── tests/
+│   ├── test_api.py      # Tests unitaires
+│   └── local_test.py    # Script de test manuel
+├── .github/workflows/   # Pipeline CI/CD
+├── Procfile
+├── requirements.txt
+└── README.md
 ```
 
----
+## Installation
 
-## 🧠 Exemple d’appel à l’API
-
+1. Cloner le dépôt :
 ```bash
-curl -X POST "https://tweet-sentiment-api-gracia.azurewebsites.net/predict"      -H "Content-Type: application/json"      -d '{"text": "I love this project!"}'
+git clone https://github.com/NathanGracia/p7_api.git
+cd p7_api
 ```
 
-Réponse :
+2. Créer un environnement virtuel :
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
+
+3. Installer les dépendances :
+```bash
+pip install -r requirements.txt
+```
+
+4. Lancer le serveur :
+```bash
+uvicorn app.main:app --reload
+```
+
+L'API est accessible sur `http://localhost:8000`. La documentation Swagger est disponible sur `/docs`.
+
+## Endpoints
+
+### GET /health
+Vérifie que l'API fonctionne.
+
+**Réponse :**
+```json
+{"status": "ok"}
+```
+
+### POST /predict
+Analyse le sentiment d'un texte.
+
+**Requête :**
+```json
+{"text": "I love this project!"}
+```
+
+**Réponse :**
 ```json
 {
-  "sentiment": "positive",
-  "confidence": 0.94
+  "is_positive": true,
+  "score": 0.94
 }
 ```
 
----
+### POST /feedback
+Permet de signaler une prédiction incorrecte. Les feedbacks négatifs sont loggués sur Azure Monitor.
 
-## 🛠️ Dépannage
+**Requête :**
+```json
+{
+  "text": "I hate this",
+  "prediction": true,
+  "is_correct": false
+}
+```
 
-| Problème | Cause probable | Solution |
-|-----------|----------------|-----------|
-| `ModuleNotFoundError: No module named 'uvicorn'` | `gunicorn` ou `uvicorn` manquant dans `requirements.txt` | Ajouter `gunicorn` et `uvicorn[standard]` |
-| `Could not find virtual environment 'antenv'` | Oryx non exécuté | Vérifier `SCM_DO_BUILD_DURING_DEPLOYMENT=1` |
-| L’API ne démarre pas | Mauvais module dans le startup-command | Vérifier que `app.main:app` correspond bien à la variable FastAPI |
+## Tests
 
----
+Lancer les tests avec pytest :
+```bash
+pytest tests/test_api.py -v
+```
 
-## 🧾 Licence
+## Déploiement
 
-Ce projet est sous licence **MIT**.  
-Vous pouvez l’utiliser librement pour vos propres projets éducatifs ou professionnels.
+Le déploiement est automatisé via GitHub Actions. À chaque push sur `main` :
+1. Les tests sont exécutés
+2. Si les tests passent, l'application est déployée sur Azure App Service
+
+### Variables d'environnement
+
+| Variable | Description |
+|----------|-------------|
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Connexion Azure Monitor |
+| `MODEL_PATH` | Chemin du modèle (optionnel) |
+| `VECTORIZER_PATH` | Chemin du vectoriseur (optionnel) |
+
+## Licence
+
+MIT
